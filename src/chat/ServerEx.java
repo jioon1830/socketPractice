@@ -1,53 +1,50 @@
 package chat;
 
+import com.sun.security.ntlm.Server;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class ServerEx {
-    public static void main(String[] args){
-        ServerSocket server = null;
-        Socket socket = null;
-        BufferedReader in = null;
-        BufferedWriter out = null;
-        Scanner sc = new Scanner(System.in);
-        try {
-            server = new ServerSocket(9999);
-            System.out.println("Waiting Connection..");
-            socket = server.accept();
-            System.out.println("Connected");
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+    private ServerSocket serverSocket;
 
-            while(true){
-                String inMsg = in.readLine();
-                if(inMsg.equalsIgnoreCase("quit")){
-                    System.out.println("Disconnected");
-                    break;
-                }
-
-                System.out.println("Client : "+ inMsg);
-                System.out.print("Send: ");
-                String outMsg = sc.nextLine();
-                out.write(outMsg+"\n");
-                out.flush();
-
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }finally{
+    public ServerEx(ServerSocket serverSocket){
+        this.serverSocket = serverSocket;
+    }
+    public void startServer(){
+        while(!serverSocket.isClosed()){
+            Socket socket = null;
             try {
-                sc.close();
-                in.close();
-                out.close();
-                socket.close();
-                server.close();
+                socket = serverSocket.accept();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
+            System.out.println("A new client has connected!");
+            ClientHandler clientHandler = new ClientHandler(socket);
+            Thread thread = new Thread(clientHandler);
+            thread.start();;
         }
 
+
     }
+
+    public void closeServerSocket(){
+        try{
+            if(serverSocket != null){
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    public static void main(String[] args) throws IOException {
+
+        ServerSocket serverSocket = new ServerSocket(1234);
+        ServerEx server = new ServerEx(serverSocket);
+        server.startServer();
+    }
+
+
 }
